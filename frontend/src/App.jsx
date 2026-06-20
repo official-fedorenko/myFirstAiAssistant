@@ -109,7 +109,12 @@ function TelegramSetup() {
   const [needsPassword, setNeedsPassword] = useState(false);
 
   useEffect(() => {
-    api.get('/telegram/status').then(res => setStatus(res.data.status)).catch(console.error);
+    api.get('/telegram/status').then(res => {
+      setStatus(res.data.status);
+      if (res.data.status === 'code_requested') {
+        setStep(2);
+      }
+    }).catch(console.error);
   }, []);
 
   const handleConnect = async (e) => {

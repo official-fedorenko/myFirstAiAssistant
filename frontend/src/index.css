@@ -259,3 +259,42 @@ p { color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .sidebar-header {
+    padding: 16px;
+    justify-content: center;
+  }
+  
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px;
+    gap: 4px;
+  }
+  
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .main-content {
+    padding: 16px;
+  }
+  
+  .chat-list {
+    grid-template-columns: 1fr;
+  }
+}
