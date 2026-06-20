@@ -166,6 +166,19 @@ function TelegramSetup() {
     setLoading(false);
   };
 
+  const handleDisconnect = async () => {
+    if (!window.confirm("Are you sure you want to completely disconnect your Telegram account and delete all downloaded chats and messages?")) return;
+    setLoading(true);
+    try {
+      await api.delete('/telegram/disconnect');
+      setStatus('disconnected');
+      setStep(1);
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+    setLoading(false);
+  };
+
   return (
     <Layout>
       <h2>Telegram Connection</h2>
@@ -233,6 +246,9 @@ function TelegramSetup() {
         {status === 'connected' && (
           <div>
             <p style={{ color: 'var(--success)' }}>Successfully connected to Telegram! Your account is active and listening for messages.</p>
+            <button className="danger" style={{ marginTop: 24 }} onClick={handleDisconnect} disabled={loading}>
+              {loading ? <div className="loader"/> : 'Disconnect & Clear Telegram Data'}
+            </button>
           </div>
         )}
       </div>
@@ -366,6 +382,16 @@ function AdminPanel() {
     }
   };
 
+  const handleResetTG = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user's Telegram connection and all their downloaded messages?")) return;
+    try {
+      await api.delete(`/admin/users/${id}/telegram`);
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to reset TG");
+    }
+  };
+
   return (
     <Layout>
       <h2>User Management</h2>
@@ -401,6 +427,7 @@ function AdminPanel() {
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button className="secondary small" onClick={() => handleToggleRole(u.id)} disabled={u.id === 1}>Toggle Admin</button>
+                      <button className="danger small" onClick={() => handleResetTG(u.id)}>Reset TG</button>
                       <button className="danger small" onClick={() => handleDelete(u.id)} disabled={u.id === 1}>Delete</button>
                     </div>
                   </td>

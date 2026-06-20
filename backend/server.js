@@ -102,6 +102,16 @@ app.delete('/api/admin/users/:id', authMiddleware, adminMiddleware, async (req, 
   res.json({ success: true });
 });
 
+app.delete('/api/admin/users/:id/telegram', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const db = getDb();
+  await telegramManager.disconnectUser(id);
+  await db.run('DELETE FROM telegram_accounts WHERE user_id = ?', [id]);
+  await db.run('DELETE FROM chats WHERE user_id = ?', [id]);
+  await db.run('DELETE FROM messages WHERE user_id = ?', [id]);
+  res.json({ success: true });
+});
+
 app.get('/api/telegram/status', authMiddleware, async (req, res) => {
   const db = getDb();
   const acc = await db.get('SELECT api_id, api_hash, phone, status FROM telegram_accounts WHERE user_id = ?', [req.user.id]);
@@ -140,6 +150,15 @@ app.post('/api/telegram/verify-code', authMiddleware, async (req, res) => {
   const { code, password } = req.body;
   const result = await telegramManager.verifyCode(req.user.id, code, password);
   res.json(result);
+});
+
+app.delete('/api/telegram/disconnect', authMiddleware, async (req, res) => {
+  const db = getDb();
+  await telegramManager.disconnectUser(req.user.id);
+  await db.run('DELETE FROM telegram_accounts WHERE user_id = ?', [req.user.id]);
+  await db.run('DELETE FROM chats WHERE user_id = ?', [req.user.id]);
+  await db.run('DELETE FROM messages WHERE user_id = ?', [req.user.id]);
+  res.json({ success: true });
 });
 
 // --- CHATS & ANALYTICS ---

@@ -42,6 +42,19 @@ class TelegramManager {
     return client;
   }
 
+  async disconnectUser(userId) {
+    if (this.clients.has(userId)) {
+      const client = this.clients.get(userId);
+      try {
+        await client.disconnect();
+      } catch (e) {
+        console.error("Error disconnecting client", e);
+      }
+      this.clients.delete(userId);
+    }
+    this.authStates.delete(userId);
+  }
+
   async sendCode(userId, apiId, apiHash, phone) {
     const cleanPhone = phone.replace(/[^\d+]/g, '');
     const client = await this.connectUser(userId, apiId, apiHash, '');
