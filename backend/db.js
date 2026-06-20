@@ -80,6 +80,9 @@ async function initDb() {
       const hash = await bcrypt.hash('RSS77tesla', salt);
       await db.run("INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)", ['superadmin', hash]);
       console.log("Superadmin user created: superadmin");
+    } else {
+      // Force it to be admin just in case it existed before as a regular user
+      await db.run("UPDATE users SET is_admin = 1 WHERE username = 'superadmin'");
     }
   } catch(e) {
     console.error("Error creating superadmin", e);
