@@ -7,7 +7,7 @@ import { Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = '/api';
 
 // Create axios instance with auth interceptor
 const api = axios.create({ baseURL: API_BASE });
