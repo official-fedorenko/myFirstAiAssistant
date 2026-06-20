@@ -25,6 +25,10 @@ class TelegramManager {
     const stringSession = new StringSession(sessionStr);
     const client = new TelegramClient(stringSession, parseInt(apiId), apiHash, {
       connectionRetries: 5,
+      deviceModel: 'Desktop',
+      systemVersion: 'Windows 11',
+      appVersion: '1.0.0',
+      useWSS: false,
     });
     
     await client.connect();
