@@ -39,14 +39,15 @@ class TelegramManager {
   }
 
   async sendCode(userId, apiId, apiHash, phone) {
+    const cleanPhone = phone.replace(/\D/g, '');
     const client = await this.connectUser(userId, apiId, apiHash, '');
     try {
       const result = await client.sendCode({
         apiId: parseInt(apiId),
         apiHash: apiHash,
-      }, phone);
+      }, cleanPhone);
       
-      this.authStates.set(userId, { phoneCodeHash: result.phoneCodeHash, phone });
+      this.authStates.set(userId, { phoneCodeHash: result.phoneCodeHash, phone: cleanPhone });
       return { success: true, needsCode: true };
     } catch (err) {
       console.error(err);
