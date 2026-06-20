@@ -81,6 +81,15 @@ app.post('/api/telegram/connect', authMiddleware, async (req, res) => {
   res.json(result);
 });
 
+app.post('/api/telegram/resend-code', authMiddleware, async (req, res) => {
+  const db = getDb();
+  const acc = await db.get('SELECT api_id, api_hash, phone FROM telegram_accounts WHERE user_id = ?', [req.user.id]);
+  if (!acc) return res.status(400).json({ error: 'No configuration found' });
+  
+  const result = await telegramManager.sendCode(req.user.id, acc.api_id, acc.api_hash, acc.phone);
+  res.json(result);
+});
+
 app.post('/api/telegram/verify-code', authMiddleware, async (req, res) => {
   const { code, password } = req.body;
   const result = await telegramManager.verifyCode(req.user.id, code, password);

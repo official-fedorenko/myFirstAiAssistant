@@ -183,7 +183,26 @@ function TelegramSetup() {
               <input type="password" placeholder="2FA Password" value={password} onChange={e => setPassword(e.target.value)} required />
             )}
             <button type="submit" disabled={loading}>{loading ? <div className="loader"/> : 'Verify & Login'}</button>
-            <button type="button" className="secondary" style={{ marginTop: 8 }} onClick={() => setStep(1)}>Edit Configuration</button>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="secondary" 
+                style={{ flex: 1 }}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await api.post('/telegram/resend-code');
+                    alert("Code resent!");
+                  } catch (err) {
+                    alert("Failed to resend code: " + err.message);
+                  }
+                  setLoading(false);
+                }}
+              >
+                Resend Code
+              </button>
+              <button type="button" className="secondary" style={{ flex: 1 }} onClick={() => setStep(1)}>Edit Config</button>
+            </div>
           </form>
         )}
 

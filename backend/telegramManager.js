@@ -39,7 +39,7 @@ class TelegramManager {
   }
 
   async sendCode(userId, apiId, apiHash, phone) {
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
     const client = await this.connectUser(userId, apiId, apiHash, '');
     try {
       const result = await client.sendCode({
