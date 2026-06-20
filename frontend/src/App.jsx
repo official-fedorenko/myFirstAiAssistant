@@ -13,7 +13,7 @@ const API_BASE = '/api';
 const api = axios.create({ baseURL: API_BASE });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = \`Bearer \${token}\`;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -27,7 +27,7 @@ function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post(\`/auth/\${isLogin ? 'login' : 'register'}\`, { username, password });
+      const res = await api.post(`/auth/${isLogin ? 'login' : 'register'}`, { username, password });
       localStorage.setItem('token', res.data.token);
       navigate('/');
     } catch (err) {
@@ -149,7 +149,7 @@ function TelegramSetup() {
       <div className="glass-panel" style={{ maxWidth: 500 }}>
         <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
           Status: 
-          <span className={\`status-badge \${status}\`}>
+          <span className={`status-badge ${status}`}>
             {status === 'connected' ? <CheckCircle2 size={16}/> : <AlertCircle size={16}/>}
             {status.toUpperCase()}
           </span>
@@ -199,7 +199,7 @@ function Chats() {
 
   const handleSyncMonth = async (chatId) => {
     try {
-      await api.post(\`/chats/\${chatId}/sync-month\`);
+      await api.post(`/chats/${chatId}/sync-month`);
       loadChats(); // Refresh to show 'syncing' status
     } catch (err) {
       alert("Sync failed to start");
