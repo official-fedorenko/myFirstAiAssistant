@@ -20,7 +20,7 @@ async function initDb() {
 
     CREATE TABLE IF NOT EXISTS telegram_accounts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
+      user_id INTEGER UNIQUE NOT NULL,
       api_id INTEGER NOT NULL,
       api_hash TEXT NOT NULL,
       phone TEXT NOT NULL,
