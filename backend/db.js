@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 let db = null;
 
@@ -71,11 +72,17 @@ async function initDb() {
     console.error("Error checking or adding is_admin col", e);
   }
 
-  // Ensure first user is an admin
+  // Ensure superadmin exists
   try {
-    await db.run("UPDATE users SET is_admin = 1 WHERE id = 1");
+    const adminExists = await db.get("SELECT id FROM users WHERE username = 'superadmin'");
+    if (!adminExists) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('RSS77tesla', salt);
+      await db.run("INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)", ['superadmin', hash]);
+      console.log("Superadmin user created: superadmin");
+    }
   } catch(e) {
-    console.error("Error setting initial admin", e);
+    console.error("Error creating superadmin", e);
   }
 
   console.log("Database initialized");
