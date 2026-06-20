@@ -56,11 +56,14 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   res.json({ id: req.user.id });
 });
 
-// --- TELEGRAM SETUP ROUTES ---
 app.get('/api/telegram/status', authMiddleware, async (req, res) => {
   const db = getDb();
-  const acc = await db.get('SELECT api_id, status FROM telegram_accounts WHERE user_id = ?', [req.user.id]);
-  res.json({ status: acc ? acc.status : 'disconnected', hasAccount: !!acc });
+  const acc = await db.get('SELECT api_id, api_hash, phone, status FROM telegram_accounts WHERE user_id = ?', [req.user.id]);
+  res.json({ 
+    status: acc ? acc.status : 'disconnected', 
+    hasAccount: !!acc,
+    config: acc ? { apiId: acc.api_id, apiHash: acc.api_hash, phone: acc.phone } : null
+  });
 });
 
 app.post('/api/telegram/connect', authMiddleware, async (req, res) => {

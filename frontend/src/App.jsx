@@ -111,6 +111,11 @@ function TelegramSetup() {
   useEffect(() => {
     api.get('/telegram/status').then(res => {
       setStatus(res.data.status);
+      if (res.data.config) {
+        setApiId(res.data.config.apiId || '');
+        setApiHash(res.data.config.apiHash || '');
+        setPhone(res.data.config.phone || '');
+      }
       if (res.data.status === 'code_requested') {
         setStep(2);
       }
@@ -178,6 +183,7 @@ function TelegramSetup() {
               <input type="password" placeholder="2FA Password" value={password} onChange={e => setPassword(e.target.value)} required />
             )}
             <button type="submit" disabled={loading}>{loading ? <div className="loader"/> : 'Verify & Login'}</button>
+            <button type="button" className="secondary" style={{ marginTop: 8 }} onClick={() => setStep(1)}>Edit Configuration</button>
           </form>
         )}
 
