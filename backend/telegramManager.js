@@ -48,7 +48,7 @@ class TelegramManager {
       }, cleanPhone);
       
       this.authStates.set(userId, { phoneCodeHash: result.phoneCodeHash, phone: cleanPhone });
-      return { success: true, needsCode: true };
+      return { success: true, needsCode: true, isCodeViaApp: result.isCodeViaApp };
     } catch (err) {
       console.error(err);
       return { success: false, error: err.message };

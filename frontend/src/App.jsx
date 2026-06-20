@@ -107,6 +107,7 @@ function TelegramSetup() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
+  const [codeViaApp, setCodeViaApp] = useState(false);
 
   useEffect(() => {
     api.get('/telegram/status').then(res => {
@@ -127,7 +128,12 @@ function TelegramSetup() {
     setLoading(true);
     try {
       const res = await api.post('/telegram/connect', { apiId, apiHash, phone });
-      if (res.data.needsCode) setStep(2);
+      if (res.data.needsCode) {
+        setCodeViaApp(res.data.isCodeViaApp);
+        setStep(2);
+      } else if (!res.data.success) {
+        alert("Failed to connect: " + res.data.error);
+      }
     } catch (err) {
       alert("Error: " + err.message);
     }
@@ -177,7 +183,13 @@ function TelegramSetup() {
 
         {step === 2 && (
           <form onSubmit={handleVerify}>
-            <p>A verification code was sent to your Telegram app.</p>
+            <div style={{ padding: '12px', marginBottom: '16px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-glow)' }}>
+              <p style={{ margin: 0, color: 'var(--text-main)' }}>
+                {codeViaApp 
+                  ? "A verification code was sent to your official Telegram app (on your phone or PC). Please check your messages from 'Telegram'." 
+                  : "A verification code was sent via SMS to your phone."}
+              </p>
+            </div>
             <input type="text" placeholder="Code" value={code} onChange={e => setCode(e.target.value)} required />
             {needsPassword && (
               <input type="password" placeholder="2FA Password" value={password} onChange={e => setPassword(e.target.value)} required />
@@ -191,10 +203,15 @@ function TelegramSetup() {
                 onClick={async () => {
                   setLoading(true);
                   try {
-                    await api.post('/telegram/resend-code');
-                    alert("Code resent!");
+                    const res = await api.post('/telegram/resend-code');
+                    if (res.data.success) {
+                       setCodeViaApp(res.data.isCodeViaApp);
+                       alert("Code resent!");
+                    } else {
+                       alert("Failed to resend code: " + res.data.error);
+                    }
                   } catch (err) {
-                    alert("Failed to resend code: " + err.message);
+                    alert("Error: " + err.message);
                   }
                   setLoading(false);
                 }}
