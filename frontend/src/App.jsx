@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, LogOut, CheckCircle2, AlertCircle, Users } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
@@ -71,6 +71,12 @@ function Auth() {
 
 function Layout({ children }) {
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    api.get('/auth/me').then(res => setIsAdmin(res.data.isAdmin)).catch(() => {});
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -86,6 +92,7 @@ function Layout({ children }) {
           <Link to="/" className="nav-item"><LayoutDashboard size={20} /> Dashboard</Link>
           <Link to="/chats" className="nav-item"><MessageSquare size={20} /> Chats</Link>
           <Link to="/settings" className="nav-item"><Settings size={20} /> Telegram Setup</Link>
+          {isAdmin && <Link to="/admin" className="nav-item"><Users size={20} /> Admin Panel</Link>}
           <div style={{ flex: 1 }}></div>
           <div className="nav-item" style={{ cursor: 'pointer' }} onClick={handleLogout}><LogOut size={20} /> Logout</div>
         </nav>
@@ -322,6 +329,91 @@ function Dashboard() {
   );
 }
 
+function AdminPanel() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const res = await api.get('/admin/users');
+      setUsers(res.data);
+    } catch (err) {
+      alert("Failed to load users: " + (err.response?.data?.error || err.message));
+    }
+    setLoading(false);
+  };
+
+  const handleToggleRole = async (id) => {
+    try {
+      await api.put(`/admin/users/${id}/role`);
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to toggle role");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure? This will delete all their connected Telegram data as well.")) return;
+    try {
+      await api.delete(`/admin/users/${id}`);
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to delete user");
+    }
+  };
+
+  return (
+    <Layout>
+      <h2>User Management</h2>
+      <div className="glass-panel" style={{ overflowX: 'auto' }}>
+        {loading ? <div className="loader"/> : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Created At</th>
+                <th>Telegram Status</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td>{u.id}</td>
+                  <td>{u.username}</td>
+                  <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td>
+                    {u.telegram_status ? (
+                      <span className={`status-badge ${u.telegram_status}`}>{u.telegram_status}</span>
+                    ) : (
+                      <span className="status-badge disconnected">None</span>
+                    )}
+                  </td>
+                  <td>
+                    {u.is_admin ? <span className="status-badge connected">Admin</span> : <span className="status-badge pending">User</span>}
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="secondary small" onClick={() => handleToggleRole(u.id)} disabled={u.id === 1}>Toggle Admin</button>
+                      <button className="danger small" onClick={() => handleDelete(u.id)} disabled={u.id === 1}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </Layout>
+  );
+}
+
 function ProtectedRoute({ children }) {
   if (!localStorage.getItem('token')) return <Navigate to="/login" />;
   return children;
@@ -335,6 +427,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><TelegramSetup /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

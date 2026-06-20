@@ -60,6 +60,24 @@ async function initDb() {
     );
   `);
   
+  // Add is_admin column if it doesn't exist
+  try {
+    const tableInfo = await db.all("PRAGMA table_info(users)");
+    const hasAdminCol = tableInfo.some(col => col.name === 'is_admin');
+    if (!hasAdminCol) {
+      await db.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0");
+    }
+  } catch(e) {
+    console.error("Error checking or adding is_admin col", e);
+  }
+
+  // Ensure first user is an admin
+  try {
+    await db.run("UPDATE users SET is_admin = 1 WHERE id = 1");
+  } catch(e) {
+    console.error("Error setting initial admin", e);
+  }
+
   console.log("Database initialized");
   return db;
 }

@@ -33,7 +33,7 @@ app.post('/api/auth/register', async (req, res) => {
   const hash = await bcrypt.hash(password, salt);
   try {
     const result = await db.run('INSERT INTO users (username, password_hash) VALUES (?, ?)', [username, hash]);
-    const token = jwt.sign({ id: result.lastID }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: result.lastID, is_admin: 0 }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT') return res.status(400).json({ error: 'Username taken' });
@@ -48,12 +48,58 @@ app.post('/api/auth/login', async (req, res) => {
   if (!user) return res.status(400).json({ error: 'User not found' });
   const validPass = await bcrypt.compare(password, user.password_hash);
   if (!validPass) return res.status(400).json({ error: 'Invalid password' });
-  const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user.id, is_admin: user.is_admin }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ token });
 });
 
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
-  res.json({ id: req.user.id });
+  const db = getDb();
+  const user = await db.get('SELECT id, username, is_admin FROM users WHERE id = ?', [req.user.id]);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ id: user.id, username: user.username, isAdmin: !!user.is_admin });
+});
+
+// Middleware to authenticate Admin
+const adminMiddleware = async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'Access denied' });
+  const db = getDb();
+  const user = await db.get('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
+  if (!user || !user.is_admin) return res.status(403).json({ error: 'Admin access required' });
+  next();
+};
+
+// --- ADMIN ROUTES ---
+app.get('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) => {
+  const db = getDb();
+  const users = await db.all(`
+    SELECT u.id, u.username, u.is_admin, u.created_at, 
+           t.status as telegram_status, t.phone
+    FROM users u
+    LEFT JOIN telegram_accounts t ON u.id = t.user_id
+    ORDER BY u.id
+  `);
+  res.json(users);
+});
+
+app.put('/api/admin/users/:id/role', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const db = getDb();
+  if (parseInt(id) === 1) return res.status(400).json({ error: 'Cannot modify primary admin role' });
+  const user = await db.get('SELECT is_admin FROM users WHERE id = ?', [id]);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  
+  await db.run('UPDATE users SET is_admin = ? WHERE id = ?', [user.is_admin ? 0 : 1, id]);
+  res.json({ success: true, isAdmin: !user.is_admin });
+});
+
+app.delete('/api/admin/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const db = getDb();
+  if (parseInt(id) === 1) return res.status(400).json({ error: 'Cannot delete primary admin' });
+  if (parseInt(id) === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+  
+  await db.run('DELETE FROM users WHERE id = ?', [id]);
+  res.json({ success: true });
 });
 
 app.get('/api/telegram/status', authMiddleware, async (req, res) => {
